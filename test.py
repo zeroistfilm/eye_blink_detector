@@ -31,14 +31,16 @@ def crop_eye(img, eye_points):
   return eye_img, eye_rect
 
 # main
-cap = cv2.VideoCapture('videos/2.mp4')
+cap = cv2.VideoCapture('videos/1.mp4')
 
 while cap.isOpened():
   ret, img_ori = cap.read()
 
   if not ret:
     break
-
+  #height, width, channel = img_ori.shape
+  #matrix = cv2.getRotationMatrix2D((width/2, height/2), 270, 1)  
+  #img_ori = cv2.warpAffine(img_ori, matrix, (width, height))
   img_ori = cv2.resize(img_ori, dsize=(0, 0), fx=0.5, fy=0.5)
 
   img = img_ori.copy()
@@ -57,7 +59,10 @@ while cap.isOpened():
     eye_img_r = cv2.resize(eye_img_r, dsize=IMG_SIZE)
     eye_img_r = cv2.flip(eye_img_r, flipCode=1)
 
-    cv2.imshow('l', eye_img_l)
+    edge_img_l = cv2.Canny(eye_img_l,50,200)
+    print(cv2.mean(edge_img_l))
+
+    cv2.imshow('l', edge_img_l)
     cv2.imshow('r', eye_img_r)
 
     eye_input_l = eye_img_l.copy().reshape((1, IMG_SIZE[1], IMG_SIZE[0], 1)).astype(np.float32) / 255.
@@ -73,11 +78,23 @@ while cap.isOpened():
     state_l = state_l % pred_l
     state_r = state_r % pred_r
 
-    cv2.rectangle(img, pt1=tuple(eye_rect_l[0:2]), pt2=tuple(eye_rect_l[2:4]), color=(255,255,255), thickness=2)
-    cv2.rectangle(img, pt1=tuple(eye_rect_r[0:2]), pt2=tuple(eye_rect_r[2:4]), color=(255,255,255), thickness=2)
+    if state_l[0:1] =='-':
+      color_l = (0,0,255)
+      
+    else:
+      color_l = (0,255,0) 
+    
+    if state_r[0:1] =='-':
+      color_r = (0,0,255)
+      
+    else:
+      color_r = (0,255,0) 
+    
+    cv2.rectangle(img, pt1=tuple(eye_rect_l[0:2]), pt2=tuple(eye_rect_l[2:4]), color=color_l, thickness=1)
+    cv2.rectangle(img, pt1=tuple(eye_rect_r[0:2]), pt2=tuple(eye_rect_r[2:4]), color=color_r, thickness=1)
 
-    cv2.putText(img, state_l, tuple(eye_rect_l[0:2]), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2)
-    cv2.putText(img, state_r, tuple(eye_rect_r[0:2]), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2)
+    cv2.putText(img, state_l, tuple(eye_rect_l[0:2]), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 1)
+    cv2.putText(img, state_r, tuple(eye_rect_r[0:2]), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 1)
 
   cv2.imshow('result', img)
   if cv2.waitKey(1) == ord('q'):
